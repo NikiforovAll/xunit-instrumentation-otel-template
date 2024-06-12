@@ -83,7 +83,7 @@ jobs:
     if: github.event_name == 'release'
     environment:
       name: "NuGet"
-      url: https://www.nuget.org/packages?q=XUnit.Otel.Template
+      url: https://www.nuget.org/packages/XUnit.Otel.Template
     runs-on: windows-latest
     steps:
       - name: "Download Artefact"

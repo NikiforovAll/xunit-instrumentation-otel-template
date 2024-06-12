@@ -6,6 +6,8 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nikiforovall/xunit-instrumentation-otel-template/blob/main/LICENSE.md)
 
+![alt](./assets/blog-cover.png)
+
 Template with OpenTelemetry test instrumentation for XUnit.
 
 ## Installation
@@ -72,3 +74,6 @@ Run tests:
 See traces:
 
 Navigate to <http://localhost:18888/traces>.
+
+## Results
+
