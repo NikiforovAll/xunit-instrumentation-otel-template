@@ -1,10 +1,12 @@
-namespace XUnitOtel;
+namespace XUnitOtel.MonitoringFramework;
 
 using System.Diagnostics;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry;
 using OpenTelemetry.Trace;
 
 public class BaseFixture : IAsyncLifetime
@@ -12,6 +14,8 @@ public class BaseFixture : IAsyncLifetime
     public static ActivitySource ActivitySource { get; } = new(TracerName);
     public const string TracerName = "tests";
     public static Activity ActivityForTestRun { get; private set; } = default!;
+    public static TestMetrics Metrics { get; private set; } = default!;
+    public static TimeProvider TimeProvider { get; private set; } = default!;
 
     private readonly IContainer aspireDashboard = new ContainerBuilder()
         .WithImage("mcr.microsoft.com/dotnet/aspire-dashboard:8.0.0")
@@ -25,9 +29,9 @@ public class BaseFixture : IAsyncLifetime
         .WithLabel("aspire-dashboard", "aspire-dashboard-reuse-id")
         .Build();
 
-    public IHost HostApp { get; private set; }
+    public IHost HostApp { get; private set; } = default!;
 
-    private Task hostStartupTask;
+    private Task hostStartupTask = default!;
 
     public async Task InitializeAsync()
     {
@@ -38,6 +42,19 @@ public class BaseFixture : IAsyncLifetime
 
     private async Task BootstrapAsync()
     {
+        var includeWarmupTraceArgument = Environment.GetEnvironmentVariable(
+            Constants.Monitoring.TraceWarmup
+        );
+
+        _ = bool.TryParse(includeWarmupTraceArgument, out var includeWarmupTrace);
+
+        TracerProvider? warmupTracerProvider = default;
+
+        if (includeWarmupTrace)
+        {
+            warmupTracerProvider = Sdk.CreateTracerProviderBuilder().AddSource(TracerName).Build();
+        }
+
         var builder = Host.CreateApplicationBuilder(
             new HostApplicationBuilderSettings()
             {
@@ -54,19 +71,23 @@ public class BaseFixture : IAsyncLifetime
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
-                ["OTEL_EXPORTER_OTLP_ENDPOINT"] =
+                [Constants.Otel.ExporterEndpoint] =
                     $"http://localhost:{aspireDashboard.GetMappedPublicPort(18889)}",
-                ["OTEL_SERVICE_NAME"] = "test-host",
+                [Constants.Otel.ServiceName] = "test-host",
             }
         );
-        // get current date and format it as "yearmonthdayhoursminutesseconds"
         var testRunId = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss");
 
         builder.AddServiceDefaults(testRunId);
 
         HostApp = builder.Build();
 
+        Metrics = HostApp.Services.GetRequiredService<TestMetrics>();
+        TimeProvider = HostApp.Services.GetRequiredService<TimeProvider>();
+
         hostStartupTask = HostApp.RunAsync();
+
+        warmupTracerProvider?.Dispose();
     }
 
     public async Task DisposeAsync()
@@ -91,6 +112,28 @@ public abstract class BaseContext(BaseFixture fixture)
         try
         {
             action?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            activity?.RecordException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
+            throw;
+        }
+
+        activity?.SetStatus(ActivityStatusCode.Ok);
+    }
+
+    public async Task Runner(Func<Task> action)
+    {
+        var activity = Activity.Current;
+        try
+        {
+            var task = action?.Invoke();
+
+            if (task is not null)
+            {
+                await task;
+            }
         }
         catch (Exception ex)
         {

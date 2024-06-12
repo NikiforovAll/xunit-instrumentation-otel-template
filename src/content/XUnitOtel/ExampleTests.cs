@@ -1,7 +1,5 @@
 namespace XUnitOtel;
 
-using XUnitOtel.MonitoringFramework;
-
 [TracePerTestRun]
 public class ExampleTests(BaseFixture fixture) : BaseContext(fixture)
 {
@@ -9,7 +7,7 @@ public class ExampleTests(BaseFixture fixture) : BaseContext(fixture)
     public async Task WaitRandomTime_Success()
     {
         // Given
-        int waitFor = Random.Shared.Next(100, 300);
+        int waitFor = Random.Shared.Next(100, 500);
         TimeSpan delay = TimeSpan.FromMilliseconds(waitFor);
 
         // When
@@ -24,7 +22,7 @@ public class ExampleTests(BaseFixture fixture) : BaseContext(fixture)
     {
         // Given
         using var myActivity = BaseFixture.ActivitySource.StartActivity("SubActivity");
-        int waitFor = Random.Shared.Next(100, 300);
+        int waitFor = Random.Shared.Next(50, 250);
         TimeSpan delay = TimeSpan.FromMilliseconds(waitFor);
 
         // When
@@ -37,10 +35,10 @@ public class ExampleTests(BaseFixture fixture) : BaseContext(fixture)
     }
 
     [Fact]
-    public async Task WaitRandomTime_Fail()
+    public async Task WaitRandomTime_AsyncWait_Success()
     {
         // Given
-        int waitFor = Random.Shared.Next(50, 100);
+        int waitFor = Random.Shared.Next(50, 250);
         TimeSpan delay = TimeSpan.FromMilliseconds(waitFor);
 
         // When
@@ -48,6 +46,11 @@ public class ExampleTests(BaseFixture fixture) : BaseContext(fixture)
 
         // Then
 
-        Runner(() => Assert.True(false));
+        await Runner(async () =>
+        {
+            await Task.Delay(delay);
+
+            Assert.True(true);
+        });
     }
 }

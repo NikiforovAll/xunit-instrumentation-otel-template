@@ -6,6 +6,8 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nikiforovall/xunit-instrumentation-otel-template/blob/main/LICENSE.md)
 
+![alt](./assets/blog-cover.png)
+
 Template with OpenTelemetry test instrumentation for XUnit.
 
 ## Installation
@@ -72,3 +74,27 @@ Run tests:
 See traces:
 
 Navigate to <http://localhost:18888/traces>.
+
+## Results
+
+Initial trace with warmup trace included:
+
+![alt](./assets/initial-traces.png)
+
+See the details of test run:
+
+![alt](./assets/test-run.png)
+
+Now let's change one of the tests so we can see how failed tests are displayed:
+
+![alt](/assets/trace-with-error.png)
+
+And the details of the test run:
+
+![alt](/assets/trace-with-error-details.png)
+
+💡 As you can see, the exception is recorded as Trace Event.
+
+Also, we can see the metrics for overall test runs. These metrics shows of execution time per-test and per-class based on tags.
+
+![alt](/assets/metrics.png)
