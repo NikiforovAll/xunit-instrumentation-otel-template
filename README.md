@@ -77,3 +77,24 @@ Navigate to <http://localhost:18888/traces>.
 
 ## Results
 
+Initial trace with warmup trace included:
+
+![alt](./assets/initial-traces.png)
+
+See the details of test run:
+
+![alt](./assets/test-run.png)
+
+Now let's change one of the tests so we can see how failed tests are displayed:
+
+![alt](/assets/trace-with-error.png)
+
+And the details of the test run:
+
+![alt](/assets/trace-with-error-details.png)
+
+💡 As you can see, the exception is recorded as Trace Event.
+
+Also, we can see the metrics for overall test runs. These metrics shows of execution time per-test and per-class based on tags.
+
+![alt](/assets/metrics.png)
